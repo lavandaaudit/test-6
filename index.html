@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · ULTRA FORMULA PULSE</title>
+<title>GEOMETRIC CHAOS · CYBER GRID</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 html, body { margin:0; padding:0; background:#000; overflow:hidden; height:100%; font-family:'Courier New', monospace; color:#0af; }
@@ -17,121 +17,116 @@ canvas { display:block; }
 </style>
 </head>
 <body>
-<div id="hud">GEOMETRIC CHAOS — ULTRA FORMULA PULSE</div>
+<div id="hud">GEOMETRIC CHAOS — CYBER GRID</div>
 <div id="status"></div>
 <div id="data">ініціалізація...</div>
 <div id="clock">—</div>
 <canvas id="c"></canvas>
 
 <script>
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const dataDiv = document.getElementById('data');
-const clockDiv = document.getElementById('clock');
-const statusDiv = document.getElementById('status');
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const dataDiv=document.getElementById('data');
+const clockDiv=document.getElementById('clock');
+const statusDiv=document.getElementById('status');
 
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize);
-resize();
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+window.addEventListener('resize',resize);resize();
 
-const startTime = Date.now();
-function formatRelativeTime(ms) {
-  const s = Math.floor(ms / 1000);
-  if (s < 60) return `+${s}s`;
-  const m = Math.floor(s / 60); const sec = s % 60;
-  if (m < 60) return `+${m}m ${sec}s`;
-  const h = Math.floor(m / 60); const min = m % 60;
+const startTime=Date.now();
+function formatRelativeTime(ms){
+  const s=Math.floor(ms/1000);
+  if(s<60)return `+${s}s`;
+  const m=Math.floor(s/60); const sec=s%60;
+  if(m<60)return `+${m}m ${sec}s`;
+  const h=Math.floor(m/60); const min=m%60;
   return `+${h}h ${min}m`;
 }
-function updateClock() {
-  const now = new Date();
-  clockDiv.innerHTML = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}<br>${formatRelativeTime(Date.now() - startTime)}`;
+function updateClock(){
+  const now=new Date();
+  clockDiv.innerHTML=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}<br>${formatRelativeTime(Date.now()-startTime)}`;
 }
-setInterval(updateClock, 1000); updateClock();
+setInterval(updateClock,1000);updateClock();
 
 // --- Зірки ---
-const stars = [];
-for (let i = 0; i < 300; i++) {
-  stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.4+0.4, baseAlpha: Math.random()*0.4+0.25, twinkle: Math.random()*0.015+0.006 });
+const stars=[];
+for(let i=0;i<300;i++){
+  stars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,size:Math.random()*1.2+0.4,baseAlpha:Math.random()*0.4+0.25,twinkle:Math.random()*0.015+0.006});
 }
 
 // --- Дані ---
-let realData = { seismic:0.5, magnetic:0.5, atmosphere_wind:0.5, atmosphere_pressure:0.5, atmosphere_temp:0.5, ocean:0.5, solar_radiation:0.5, solar_wind:0.5, precipitation:0.5, chaos:0.5 };
-let dataHistory = {}; Object.keys(realData).forEach(k => dataHistory[k] = []);
-let sources = {};
+let realData={seismic:0.5,magnetic:0.5,atmosphere_wind:0.5,atmosphere_pressure:0.5,atmosphere_temp:0.5,ocean:0.5,solar_radiation:0.5,solar_wind:0.5,precipitation:0.5,chaos:0.5};
+let dataHistory={};Object.keys(realData).forEach(k=>dataHistory[k]=[]);
+let sources={};
 
-const blobs = [
-  { param: 'seismic', color: 'rgba(220,60,80,', phase: 0.0, targetSize:6, targetAlpha:0.75 },
-  { param: 'magnetic', color: 'rgba(60,180,255,', phase: 1.2, targetSize:6, targetAlpha:0.75 },
-  { param: 'atmosphere_wind', color: 'rgba(80,255,160,', phase: 2.4, targetSize:6, targetAlpha:0.7 },
-  { param: 'atmosphere_temp', color: 'rgba(255,180,60,', phase: 3.6, targetSize:6, targetAlpha:0.7 },
-  { param: 'solar_radiation', color: 'rgba(255,240,100,', phase: 4.8, targetSize:5, targetAlpha:0.65 },
-  { param: 'solar_wind', color: 'rgba(200,120,255,', phase: 6.0, targetSize:6, targetAlpha:0.7 },
-  { param: 'precipitation', color: 'rgba(100,220,255,', phase: 7.2, targetSize:6, targetAlpha:0.7 }
+const blobs=[
+  {param:'seismic',color:'rgba(220,60,80,',phase:0,targetSize:6,targetAlpha:0.75},
+  {param:'magnetic',color:'rgba(60,180,255,',phase:1.2,targetSize:6,targetAlpha:0.75},
+  {param:'atmosphere_wind',color:'rgba(80,255,160,',phase:2.4,targetSize:6,targetAlpha:0.7},
+  {param:'atmosphere_temp',color:'rgba(255,180,60,',phase:3.6,targetSize:6,targetAlpha:0.7},
+  {param:'solar_radiation',color:'rgba(255,240,100,',phase:4.8,targetSize:5,targetAlpha:0.65},
+  {param:'solar_wind',color:'rgba(200,120,255,',phase:6.0,targetSize:6,targetAlpha:0.7},
+  {param:'precipitation',color:'rgba(100,220,255,',phase:7.2,targetSize:6,targetAlpha:0.7}
 ];
-blobs.forEach(b => { b.angle = Math.random()*Math.PI*2; b.radius = 60 + Math.random()*50; b.currentSize = b.targetSize; b.currentAlpha = b.targetAlpha; b.currentDist = b.radius; });
+blobs.forEach(b=>{b.angle=Math.random()*Math.PI*2;b.radius=60+Math.random()*50;b.currentSize=b.targetSize;b.currentAlpha=b.targetAlpha;b.currentDist=b.radius;});
 
-function lerp(a, b, t) { return a + (b - a) * t; }
+function lerp(a,b,t){return a+(b-a)*t;}
 
-// --- Fetch real-time data (залишено без змін) ---
-async function fetchRealPlanetData() {
-  statusDiv.innerHTML = 'оновлення...';
-  let loaded = 0;
-  try {
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=50.55&longitude=30.25&current=temperature_2m,wind_speed_10m,surface_pressure,precipitation,shortwave_radiation`;
-    const wRes = await fetch(weatherUrl);
-    if (wRes.ok) {
-      const w = (await wRes.json()).current || {};
-      realData.atmosphere_temp     = Math.min(1, Math.max(0, (w.temperature_2m + 40) / 80));
-      realData.atmosphere_wind     = Math.min(1, (w.wind_speed_10m || 0) / 80);
-      realData.atmosphere_pressure = Math.min(1, Math.max(0, ((w.surface_pressure || 1013) - 950) / 150));
-      realData.precipitation       = Math.min(1, (w.precipitation || 0) / 15);
-      realData.solar_radiation     = Math.min(1, (w.shortwave_radiation || 0) / 1200);
-      loaded += 5;
-      sources.atmosphere_temp = sources.atmosphere_wind = sources.atmosphere_pressure = sources.precipitation = sources.solar_radiation = true;
+// --- Fetch real-time data ---
+async function fetchRealPlanetData(){
+  statusDiv.innerHTML='оновлення...'; let loaded=0;
+  try{
+    const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=50.55&longitude=30.25&current=temperature_2m,wind_speed_10m,surface_pressure,precipitation,shortwave_radiation`;
+    const wRes=await fetch(weatherUrl);
+    if(wRes.ok){const w=(await wRes.json()).current||{};
+      realData.atmosphere_temp=Math.min(1,Math.max(0,(w.temperature_2m+40)/80));
+      realData.atmosphere_wind=Math.min(1,(w.wind_speed_10m||0)/80);
+      realData.atmosphere_pressure=Math.min(1,Math.max(0,((w.surface_pressure||1013)-950)/150));
+      realData.precipitation=Math.min(1,(w.precipitation||0)/15);
+      realData.solar_radiation=Math.min(1,(w.shortwave_radiation||0)/1200);
+      loaded+=5; sources.atmosphere_temp=sources.atmosphere_wind=sources.atmosphere_pressure=sources.precipitation=sources.solar_radiation=true;
     }
-    const oceanRes = await fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=44.5&longitude=34.0&current=wave_height`);
-    if (oceanRes.ok) { const o=(await oceanRes.json()).current||{}; realData.ocean=Math.min(1,(o.wave_height||0)/8); loaded++; sources.ocean=true; }
-    const eqRes = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson');
-    if (eqRes.ok) { const eq=await eqRes.json(); const feats=eq.features||[]; const count=feats.length; const maxMag=feats.reduce((m,f)=>Math.max(m,f.properties?.mag||0),0); realData.seismic=Math.min(1,(count/30)+(maxMag/10)*0.5); loaded++; sources.seismic=true; }
+    const oceanRes=await fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=44.5&longitude=34.0&current=wave_height`);
+    if(oceanRes.ok){const o=(await oceanRes.json()).current||{}; realData.ocean=Math.min(1,(o.wave_height||0)/8); loaded++; sources.ocean=true;}
+    const eqRes=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson');
+    if(eqRes.ok){const eq=await eqRes.json(); const feats=eq.features||[]; const count=feats.length; const maxMag=feats.reduce((m,f)=>Math.max(m,f.properties?.mag||0),0); realData.seismic=Math.min(1,(count/30)+(maxMag/10)*0.5); loaded++; sources.seismic=true;}
     const proxy='https://corsproxy.io/?';
-    try { const solarRes=await fetch(proxy+encodeURIComponent('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json')); if(solarRes.ok){ const data=await solarRes.json(); const latest=data[data.length-1]||[]; const speed=parseFloat(latest[3])||400; realData.solar_wind=Math.min(1,Math.max(0,(speed-250)/750)); loaded++; sources.solar_wind=true; } } catch{}
-    try { const kpRes=await fetch(proxy+encodeURIComponent('https://services.swpc.noaa.gov/products/geospace/planetary-k-index-1-minute.json')); if(kpRes.ok){ const data=await kpRes.json(); const latestKp=parseFloat(data[data.length-1]?.[1])||0; realData.magnetic=Math.min(1,latestKp/9); loaded++; sources.magnetic=true; } } catch{}
-    Object.keys(realData).forEach(k=>{ if(k!=='chaos'){ dataHistory[k].push(realData[k]); if(dataHistory[k].length>80)dataHistory[k].shift(); } });
-    let vars=[]; Object.keys(dataHistory).forEach(k=>{ if(k==='chaos')return; const h=dataHistory[k]; if(h.length<2)return; const mean=h.reduce((a,b)=>a+b,0)/h.length; const varnce=h.reduce((a,b)=>a+(b-mean)**2,0)/h.length; vars.push(Math.sqrt(varnce)); });
-    realData.chaos = vars.length ? Math.min(1, vars.reduce((a,b)=>a+b,0)/vars.length*10):0.5;
-    blobs.forEach(b=>{ const v=realData[b.param]||0.5; b.targetSize=4+v*14; b.targetAlpha=0.3+v*0.6; b.targetDist=70+v*80; });
-    let html=''; Object.keys(realData).forEach(k=>{ let cls='fallback'; if(sources[k]===true)cls='real'; else if(k!=='chaos')cls='warning'; html+=`${k.padEnd(20,' ')} <span class="${cls}">${realData[k].toFixed(3)}</span><br>`; });
+    try{const solarRes=await fetch(proxy+encodeURIComponent('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'));
+      if(solarRes.ok){const data=await solarRes.json(); const latest=data[data.length-1]||[]; const speed=parseFloat(latest[3])||400; realData.solar_wind=Math.min(1,Math.max(0,(speed-250)/750)); loaded++; sources.solar_wind=true;}}catch{}
+    try{const kpRes=await fetch(proxy+encodeURIComponent('https://services.swpc.noaa.gov/products/geospace/planetary-k-index-1-minute.json'));
+      if(kpRes.ok){const data=await kpRes.json(); const latestKp=parseFloat(data[data.length-1]?.[1])||0; realData.magnetic=Math.min(1,latestKp/9); loaded++; sources.magnetic=true;}}catch{}
+    Object.keys(realData).forEach(k=>{if(k!=='chaos'){dataHistory[k].push(realData[k]); if(dataHistory[k].length>80)dataHistory[k].shift();}});
+    let vars=[]; Object.keys(dataHistory).forEach(k=>{if(k==='chaos')return; const h=dataHistory[k]; if(h.length<2)return; const mean=h.reduce((a,b)=>a+b,0)/h.length; const varnce=h.reduce((a,b)=>a+(b-mean)**2,0)/h.length; vars.push(Math.sqrt(varnce));});
+    realData.chaos=vars.length?Math.min(1,vars.reduce((a,b)=>a+b,0)/vars.length*10):0.5;
+    blobs.forEach(b=>{const v=realData[b.param]||0.5;b.targetSize=4+v*14;b.targetAlpha=0.3+v*0.6;b.targetDist=70+v*80;});
+    let html=''; Object.keys(realData).forEach(k=>{let cls='fallback'; if(sources[k]===true)cls='real'; else if(k!=='chaos')cls='warning'; html+=`${k.padEnd(20,' ')} <span class="${cls}">${realData[k].toFixed(3)}</span><br>`;});
     dataDiv.innerHTML=html; statusDiv.innerHTML=loaded>0?'оновлено':'';
-  } catch(e){ console.error(e); statusDiv.innerHTML=''; }
+  }catch(e){console.error(e);statusDiv.innerHTML='';}
 }
-fetchRealPlanetData();
-setInterval(fetchRealPlanetData,120000);
+fetchRealPlanetData(); setInterval(fetchRealPlanetData,120000);
 
-// --- Лівий графік ---
+// --- Лівий графік (оновлений) ---
 function drawCoordinateSystem(){
-  const margin=40,width=200,height=canvas.height-80;
+  const margin=50,width=180,height=canvas.height-100;
   ctx.strokeStyle='#0af'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(margin,40); ctx.lineTo(margin,height+40); ctx.lineTo(width+margin,height+40); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(margin,50); ctx.lineTo(margin,height+50); ctx.lineTo(width+margin,height+50); ctx.stroke();
   ctx.fillStyle='#0af'; ctx.font='11px Courier New';
   const keys=Object.keys(realData);
-  keys.forEach((k,i)=>{ const y=40+i*(height/(keys.length-1)); ctx.fillText(k,5,y+3); });
+  keys.forEach((k,i)=>{const y=50+i*(height/(keys.length-1)); ctx.fillText(k,5,y+3);});
   ctx.strokeStyle='rgba(0,255,150,0.6)'; ctx.fillStyle='rgba(0,255,150,0.8)'; ctx.lineWidth=1.2;
-  let prev=null;
-  keys.forEach((k,i)=>{
-    const x=margin+realData[k]*width;
-    const y=40+i*(height/(keys.length-1));
+  let prev=null; keys.forEach((k,i)=>{
+    const x=margin+realData[k]*width; const y=50+i*(height/(keys.length-1));
     ctx.beginPath(); ctx.arc(x,y,5,0,2*Math.PI); ctx.fill();
-    if(prev){ ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); }
+    if(prev){ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke();}
     prev={x:x,y:y};
   });
 }
 
-// --- Формули для фону ---
-const formulas = ["E=mc^2","F=ma","∇·E=ρ/ε₀","∫F·dr=ΔK","a^2+b^2=c^2","iħ∂ψ/∂t=Hψ","V=IR"];
-const formulaObjs = formulas.map(f=>({text:f,x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,alpha:0,phase:Math.random()*Math.PI*2}));
+// --- Формули ---
+const formulas=["E=mc^2","F=ma","∇·E=ρ/ε₀","∫F·dr=ΔK","a^2+b^2=c^2","iħ∂ψ/∂t=Hψ","V=IR"];
+const formulaObjs=formulas.map(f=>({text:f,x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,alpha:0,phase:Math.random()*Math.PI*2}));
 
-// --- Основна анімація ---
+// --- Основна геометрична анімація ---
 let t=0;
 function loop(){
   t+=0.016;
@@ -139,41 +134,41 @@ function loop(){
   const chaos=realData.chaos, cx=canvas.width/2, cy=canvas.height/2;
 
   // Зірки
-  const starMod=1-chaos*0.35;
+  const starMod=1-chaos*0.3;
   stars.forEach(s=>{
-    const tw=Math.sin(t*s.twinkle*12 + s.x*0.008)*0.18*starMod;
+    const tw=Math.sin(t*s.twinkle*12+s.x*0.008)*0.18*starMod;
     ctx.fillStyle=`rgba(220,235,255,${Math.max(0.08,s.baseAlpha+tw).toFixed(3)})`;
     ctx.fillRect(s.x,s.y,s.size,s.size);
   });
 
-  // Багатошарові полігони
-  for(let i=0;i<10;i++){
-    const sides=3+i+Math.floor(realData.chaos*5);
-    const r=80+50*i+Math.sin(t*0.2+i)*40;
+  // Концентричні кола та полігони
+  for(let i=0;i<12;i++){
+    const sides=3+Math.floor(3+Math.sin(t*0.1+i)*4);
+    const r=60+40*i+Math.sin(t*0.2+i)*30+realData.seismic*50;
     ctx.beginPath();
     for(let j=0;j<sides;j++){
-      const angle=(Math.PI*2/sides)*j+t*0.3*i;
-      const x=cx+Math.cos(angle)*r*(0.7+0.3*Math.sin(t+i));
-      const y=cy+Math.sin(angle)*r*(0.7+0.3*Math.cos(t+i));
+      const angle=(Math.PI*2/sides)*j+t*0.2*i;
+      const x=cx+Math.cos(angle)*r;
+      const y=cy+Math.sin(angle)*r;
       j===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
     }
     ctx.closePath();
-    ctx.strokeStyle=`rgba(${50+i*20},${200-i*10},${100+i*15},${0.05+realData.chaos*0.15})`;
-    ctx.lineWidth=1.2+realData.magnetic*1.5;
+    ctx.strokeStyle=`rgba(${50+i*15},${180-i*8},${100+i*12},${0.05+chaos*0.15})`;
+    ctx.lineWidth=1+realData.magnetic;
     ctx.stroke();
   }
 
   // Спіралі
-  for(let s=0;s<3;s++){
+  for(let s=0;s<4;s++){
     ctx.beginPath();
-    for(let i=0;i<200;i++){
-      const angle=i*0.15+t*0.6+s;
-      const radius=i*0.6+30*Math.sin(t*0.5+i*0.3)+realData.solar_radiation*15;
+    for(let i=0;i<150;i++){
+      const angle=i*0.18+t*0.5+s;
+      const radius=i*0.6+30*Math.sin(t*0.5+i*0.3)+realData.solar_radiation*20;
       const x=cx+Math.cos(angle+s)*radius;
       const y=cy+Math.sin(angle+s)*radius;
       i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
     }
-    ctx.strokeStyle=`rgba(255,${100+s*40},${50+s*30},${0.04+realData.solar_wind*0.15})`;
+    ctx.strokeStyle=`rgba(255,${100+s*40},${50+s*30},${0.05+realData.solar_wind*0.15})`;
     ctx.lineWidth=1+s*0.5; ctx.stroke();
   }
 
