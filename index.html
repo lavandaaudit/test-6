@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>PLANET CHAOS · COSMOS ONLY</title>
+<title>PLANET CHAOS · COSMOS · SUN</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 html, body {
@@ -19,7 +19,7 @@ html, body {
   top:16px;
   left:16px;
   font-size:14px;
-  opacity:0.8;
+  opacity:0.85;
 }
 #status {
   position:absolute;
@@ -38,13 +38,15 @@ html, body {
   font-size:11px;
   line-height:1.35;
   color:#0f0;
+  overflow-y:auto;
 }
 #clock {
   position:absolute;
   bottom:16px;
   right:16px;
   font-size:11px;
-  opacity:0.5;
+  opacity:0.45;
+  text-align:right;
 }
 .category {
   margin:18px 0 6px 0;
@@ -62,7 +64,7 @@ html, body {
 </head>
 
 <body>
-<div id="hud">Lavanda.audit.ibonarium.project · COSMOS</div>
+<div id="hud">Lavanda.audit.ibonarium.project · COSMOS / SUN</div>
 <div id="status">ініціалізація…</div>
 <div id="data">завантаження…</div>
 <div id="clock"></div>
@@ -74,14 +76,17 @@ const clockDiv = document.getElementById('clock');
 const proxy = 'https://corsproxy.io/?';
 const startTime = Date.now();
 
-function clock() {
+/* ───────── CLOCK ───────── */
+function updateClock(){
   const d = new Date();
+  const up = Math.floor((Date.now()-startTime)/1000);
   clockDiv.innerHTML =
-    `${d.toLocaleTimeString()}<br>${Math.floor((Date.now()-startTime)/1000)}s`;
+    `${d.toLocaleTimeString()}<br>uptime ${up}s`;
 }
-setInterval(clock,1000); clock();
+setInterval(updateClock,1000); updateClock();
 
-function color(v,{watch,warn,danger}) {
+/* ───────── HELPERS ───────── */
+function color(v,{watch,warn,danger}){
   if (v===null || v==='--' || isNaN(v)) return 'val-safe';
   if (danger!==undefined && v>=danger) return 'val-danger';
   if (warn!==undefined && v>=warn) return 'val-warn';
@@ -96,9 +101,10 @@ async function fetchJSON(url){
   }catch{ return null; }
 }
 
+/* ───────── MAIN ───────── */
 async function loadCosmos(){
-  statusDiv.textContent = 'оновлення космосу…';
-  let html = '<div class="category">КОСМОС</div>';
+  statusDiv.textContent = 'оновлення космічних даних…';
+  let html = '<div class="category">КОСМОС / СОНЦЕ</div>';
   let count = 0;
 
   /* ── SOLAR WIND ── */
@@ -130,7 +136,18 @@ async function loadCosmos(){
     count++;
   }
 
-  /* ── CME ── */
+  /* ── DST INDEX ── */
+  const dst = await fetchJSON(
+    'https://services.swpc.noaa.gov/products/kyoto-dst.json'
+  );
+  if (dst?.length){
+    const v = +dst.at(-1)[1];
+    html += `<div class="row"><span class="label">Dst Index </span>
+      <span class="${color(-v,{watch:50,warn:100,danger:200})}">${v} nT</span></div>`;
+    count++;
+  }
+
+  /* ── CME (NASA DONKI) ── */
   const d = new Date().toISOString().slice(0,10);
   const cme = await fetchJSON(
     `https://api.nasa.gov/DONKI/CME?startDate=${d}&endDate=${d}&api_key=DEMO_KEY`
@@ -157,7 +174,7 @@ async function loadCosmos(){
     count++;
   }
 
-    /* ── SUNSPOTS (SSN) ── */
+  /* ── SUNSPOTS ── */
   const sunspots = await fetchJSON(
     'https://services.swpc.noaa.gov/json/sunspot/sunspot.json'
   );
@@ -168,7 +185,7 @@ async function loadCosmos(){
     count++;
   }
 
-  /* ── SOLAR RADIO FLUX F10.7 ── */
+  /* ── SOLAR FLUX F10.7 ── */
   const f107 = await fetchJSON(
     'https://services.swpc.noaa.gov/json/f107.json'
   );
@@ -179,7 +196,7 @@ async function loadCosmos(){
     count++;
   }
 
-  /* ── SOLAR FLARES (24H) ── */
+  /* ── SOLAR FLARES 24H ── */
   const flares = await fetchJSON(
     'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-24h.json'
   );
@@ -190,40 +207,30 @@ async function loadCosmos(){
   }
 
   /* ── PROTON FLUX >100 MeV ── */
-  const proton100 = await fetchJSON(
+  const proton = await fetchJSON(
     'https://services.swpc.noaa.gov/json/goes/primary/proton-flux.json'
   );
-  if (proton100?.length){
-    const p = proton100.at(-1)['>100 MeV'] || 0;
+  if (proton?.length){
+    const p = proton.at(-1)['>100 MeV'] || 0;
     html += `<div class="row"><span class="label">Proton >100 MeV </span>
-      <span class="${color(p,{watch:1,warn:10,danger:100})}">${p.toExponential(1)} p/cm²/s</span></div>`;
+      <span class="${color(p,{watch:1,warn:10,danger:100})}">
+      ${p.toExponential(1)} p/cm²/s</span></div>`;
     count++;
   }
 
-  /* ── SOLAR EUV (UV proxy) ── */
-  const euv = await fetchJSON(
+  /* ── EUV / SOLAR CYCLE INDEX ── */
+  const cycle = await fetchJSON(
     'https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json'
   );
-  if (euv?.length){
-    const u = +euv.at(-1).euv || 0;
+  if (cycle?.length){
+    const u = +cycle.at(-1).euv || 0;
     html += `<div class="row"><span class="label">Solar EUV Index </span>
       <span class="${color(u,{watch:5,warn:8,danger:12})}">${u}</span></div>`;
     count++;
   }
 
-  /* ── DST ── */
-  const dst = await fetchJSON(
-    'https://services.swpc.noaa.gov/products/kyoto-dst.json'
-  );
-  if (dst?.length){
-    const v = +dst.at(-1)[1];
-    html += `<div class="row"><span class="label">Dst Index </span>
-      <span class="${color(-v,{watch:50,warn:100,danger:200})}">${v} nT</span></div>`;
-    count++;
-  }
-
   dataDiv.innerHTML = html;
-  statusDiv.textContent = `оновлено • ${count} сигналів`;
+  statusDiv.textContent = `оновлено • ${count} сонячних сигналів`;
 }
 
 loadCosmos();
