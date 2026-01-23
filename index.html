@@ -157,6 +157,60 @@ async function loadCosmos(){
     count++;
   }
 
+    /* ── SUNSPOTS (SSN) ── */
+  const sunspots = await fetchJSON(
+    'https://services.swpc.noaa.gov/json/sunspot/sunspot.json'
+  );
+  if (sunspots?.length){
+    const s = +sunspots.at(-1).ssn;
+    html += `<div class="row"><span class="label">Sunspot Number </span>
+      <span class="${color(s,{watch:50,warn:100,danger:200})}">${s}</span></div>`;
+    count++;
+  }
+
+  /* ── SOLAR RADIO FLUX F10.7 ── */
+  const f107 = await fetchJSON(
+    'https://services.swpc.noaa.gov/json/f107.json'
+  );
+  if (f107?.length){
+    const f = +f107.at(-1).flux;
+    html += `<div class="row"><span class="label">Solar Flux F10.7 </span>
+      <span class="${color(f,{watch:100,warn:150,danger:200})}">${f} sfu</span></div>`;
+    count++;
+  }
+
+  /* ── SOLAR FLARES (24H) ── */
+  const flares = await fetchJSON(
+    'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-24h.json'
+  );
+  if (Array.isArray(flares)){
+    html += `<div class="row"><span class="label">Solar Flares 24h </span>
+      <span class="${flares.length>5?'val-warn':'val-safe'}">${flares.length}</span></div>`;
+    count++;
+  }
+
+  /* ── PROTON FLUX >100 MeV ── */
+  const proton100 = await fetchJSON(
+    'https://services.swpc.noaa.gov/json/goes/primary/proton-flux.json'
+  );
+  if (proton100?.length){
+    const p = proton100.at(-1)['>100 MeV'] || 0;
+    html += `<div class="row"><span class="label">Proton >100 MeV </span>
+      <span class="${color(p,{watch:1,warn:10,danger:100})}">${p.toExponential(1)} p/cm²/s</span></div>`;
+    count++;
+  }
+
+  /* ── SOLAR EUV (UV proxy) ── */
+  const euv = await fetchJSON(
+    'https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json'
+  );
+  if (euv?.length){
+    const u = +euv.at(-1).euv || 0;
+    html += `<div class="row"><span class="label">Solar EUV Index </span>
+      <span class="${color(u,{watch:5,warn:8,danger:12})}">${u}</span></div>`;
+    count++;
+  }
+
   /* ── DST ── */
   const dst = await fetchJSON(
     'https://services.swpc.noaa.gov/products/kyoto-dst.json'
