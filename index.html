@@ -2,239 +2,187 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>PLANET CHAOS · COSMOS · SUN</title>
+<title>COSMOS · DYNAMIC COORDINATE SYSTEM</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html, body {
+html,body{
   margin:0;
   padding:0;
   background:#000;
-  height:100%;
-  font-family:'Courier New', monospace;
-  color:#0af;
   overflow:hidden;
+  font-family:'Courier New', monospace;
 }
-#hud {
+#hud{
   position:absolute;
-  top:16px;
-  left:16px;
-  font-size:14px;
-  opacity:0.85;
-}
-#status {
-  position:absolute;
-  top:40px;
-  left:16px;
-  font-size:11px;
-  opacity:0.6;
-  color:#0f0;
-}
-#data {
-  position:absolute;
-  top:70px;
-  left:16px;
-  right:16px;
-  bottom:16px;
-  font-size:11px;
-  line-height:1.35;
-  color:#0f0;
-  overflow-y:auto;
-}
-#clock {
-  position:absolute;
-  bottom:16px;
-  right:16px;
-  font-size:11px;
-  opacity:0.45;
-  text-align:right;
-}
-.category {
-  margin:18px 0 6px 0;
-  font-size:13px;
+  top:14px;
+  left:14px;
   color:#0af;
-  font-weight:bold;
+  font-size:13px;
+  opacity:0.8;
 }
-.row { white-space:pre; }
-.label { color:#6cf; }
-.val-safe { color:#0f0; }
-.val-watch { color:#ffd700; }
-.val-warn { color:#ff8c00; }
-.val-danger { color:#f00; }
+#info{
+  position:absolute;
+  bottom:14px;
+  left:14px;
+  color:#0f0;
+  font-size:10px;
+  opacity:0.6;
+  max-width:360px;
+}
+canvas{display:block;}
 </style>
 </head>
 
 <body>
-<div id="hud">Lavanda.audit.ibonarium.project · COSMOS / SUN</div>
-<div id="status">ініціалізація…</div>
-<div id="data">завантаження…</div>
-<div id="clock"></div>
+<div id="hud">Lavanda · COSMOS COORDINATE SYSTEM</div>
+<div id="info">ініціалізація…</div>
+<canvas id="c"></canvas>
 
 <script>
-const dataDiv = document.getElementById('data');
-const statusDiv = document.getElementById('status');
-const clockDiv = document.getElementById('clock');
-const proxy = 'https://corsproxy.io/?';
-const startTime = Date.now();
-
-/* ───────── CLOCK ───────── */
-function updateClock(){
-  const d = new Date();
-  const up = Math.floor((Date.now()-startTime)/1000);
-  clockDiv.innerHTML =
-    `${d.toLocaleTimeString()}<br>uptime ${up}s`;
+/* ───────── CANVAS ───────── */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
 }
-setInterval(updateClock,1000); updateClock();
+addEventListener('resize',resize); resize();
 
-/* ───────── HELPERS ───────── */
-function color(v,{watch,warn,danger}){
-  if (v===null || v==='--' || isNaN(v)) return 'val-safe';
-  if (danger!==undefined && v>=danger) return 'val-danger';
-  if (warn!==undefined && v>=warn) return 'val-warn';
-  if (watch!==undefined && v>=watch) return 'val-watch';
-  return 'val-safe';
-}
+/* ───────── TIME ───────── */
+let t = 0;
 
-async function fetchJSON(url){
+/* ───────── DATA STATE ───────── */
+const state = {
+  wind:0,
+  kp:0,
+  dst:0,
+  f107:0,
+  sunspots:0,
+  cme:0,
+  proton:0,
+  xray:0
+};
+
+const proxy='https://corsproxy.io/?';
+
+/* ───────── FETCH ───────── */
+async function j(url){
   try{
-    const r = await fetch(proxy+encodeURIComponent(url));
-    return r.ok ? r.json() : null;
-  }catch{ return null; }
+    const r=await fetch(proxy+encodeURIComponent(url));
+    return r.ok? r.json():null;
+  }catch{return null;}
 }
 
-/* ───────── MAIN ───────── */
-async function loadCosmos(){
-  statusDiv.textContent = 'оновлення космічних даних…';
-  let html = '<div class="category">КОСМОС / СОНЦЕ</div>';
-  let count = 0;
-
-  /* ── SOLAR WIND ── */
-  const plasma = await fetchJSON(
-    'https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'
-  );
-  if (plasma?.length>1){
-    const p = plasma.at(-1);
-    const speed = +p[3]||0;
-    const dens  = +p[6]||0;
-    const temp  = +p[7]||0;
-    html += `<div class="row"><span class="label">Solar Wind Speed </span>
-      <span class="${color(speed,{watch:500,warn:700,danger:900})}">${speed.toFixed(0)} km/s</span></div>`;
-    html += `<div class="row"><span class="label">Solar Wind Density </span>
-      <span class="${color(dens,{watch:15,warn:30,danger:50})}">${dens.toFixed(1)} /cm³</span></div>`;
-    html += `<div class="row"><span class="label">Solar Wind Temp </span>
-      <span class="${color(temp/1000,{watch:100,warn:300,danger:500})}">${temp.toFixed(0)} K</span></div>`;
-    count+=3;
+async function updateData(){
+  const plasma=await j('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json');
+  if(plasma?.length){
+    state.wind=+plasma.at(-1)[3]||0;
   }
 
-  /* ── KP INDEX ── */
-  const kp = await fetchJSON(
-    'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
-  );
-  if (kp?.length){
-    const v = +kp.at(-1)[1];
-    html += `<div class="row"><span class="label">Kp-index </span>
-      <span class="${color(v,{watch:5,warn:6,danger:7})}">${v.toFixed(2)}</span></div>`;
-    count++;
-  }
+  const kp=await j('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+  if(kp?.length) state.kp=+kp.at(-1)[1]||0;
 
-  /* ── DST INDEX ── */
-  const dst = await fetchJSON(
-    'https://services.swpc.noaa.gov/products/kyoto-dst.json'
-  );
-  if (dst?.length){
-    const v = +dst.at(-1)[1];
-    html += `<div class="row"><span class="label">Dst Index </span>
-      <span class="${color(-v,{watch:50,warn:100,danger:200})}">${v} nT</span></div>`;
-    count++;
-  }
+  const dst=await j('https://services.swpc.noaa.gov/products/kyoto-dst.json');
+  if(dst?.length) state.dst=+dst.at(-1)[1]||0;
 
-  /* ── CME (NASA DONKI) ── */
-  const d = new Date().toISOString().slice(0,10);
-  const cme = await fetchJSON(
-    `https://api.nasa.gov/DONKI/CME?startDate=${d}&endDate=${d}&api_key=DEMO_KEY`
-  );
-  if (Array.isArray(cme)){
-    html += `<div class="row"><span class="label">CME today count </span>
-      <span class="${cme.length?'val-watch':'val-safe'}">${cme.length}</span></div>`;
-    if (cme[0]?.cmeAnalyses?.[0]?.speed){
-      html += `<div class="row"><span class="label">Latest CME speed </span>
-        <span>${cme[0].cmeAnalyses[0].speed} km/s</span></div>`;
-      count++;
-    }
-    count++;
-  }
+  const f107=await j('https://services.swpc.noaa.gov/json/f107.json');
+  if(f107?.length) state.f107=+f107.at(-1).flux||0;
 
-  /* ── GOES X-RAY ── */
-  const xray = await fetchJSON(
-    'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json'
-  );
-  if (xray?.length){
-    const x = xray[0];
-    html += `<div class="row"><span class="label">GOES X-ray Flux </span>
-      <span>${x.flux ?? '--'} W/m² (${x.class_type ?? '--'})</span></div>`;
-    count++;
-  }
+  const sun=await j('https://services.swpc.noaa.gov/json/sunspot/sunspot.json');
+  if(sun?.length) state.sunspots=+sun.at(-1).ssn||0;
 
-  /* ── SUNSPOTS ── */
-  const sunspots = await fetchJSON(
-    'https://services.swpc.noaa.gov/json/sunspot/sunspot.json'
-  );
-  if (sunspots?.length){
-    const s = +sunspots.at(-1).ssn;
-    html += `<div class="row"><span class="label">Sunspot Number </span>
-      <span class="${color(s,{watch:50,warn:100,danger:200})}">${s}</span></div>`;
-    count++;
-  }
+  const d=new Date().toISOString().slice(0,10);
+  const cme=await j(`https://api.nasa.gov/DONKI/CME?startDate=${d}&endDate=${d}&api_key=DEMO_KEY`);
+  state.cme=Array.isArray(cme)?cme.length:0;
 
-  /* ── SOLAR FLUX F10.7 ── */
-  const f107 = await fetchJSON(
-    'https://services.swpc.noaa.gov/json/f107.json'
-  );
-  if (f107?.length){
-    const f = +f107.at(-1).flux;
-    html += `<div class="row"><span class="label">Solar Flux F10.7 </span>
-      <span class="${color(f,{watch:100,warn:150,danger:200})}">${f} sfu</span></div>`;
-    count++;
-  }
+  const proton=await j('https://services.swpc.noaa.gov/json/goes/primary/proton-flux.json');
+  if(proton?.length) state.proton=proton.at(-1)['>10 MeV']||0;
 
-  /* ── SOLAR FLARES 24H ── */
-  const flares = await fetchJSON(
-    'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-24h.json'
-  );
-  if (Array.isArray(flares)){
-    html += `<div class="row"><span class="label">Solar Flares 24h </span>
-      <span class="${flares.length>5?'val-warn':'val-safe'}">${flares.length}</span></div>`;
-    count++;
-  }
+  const xray=await j('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json');
+  if(xray?.length) state.xray=xray[0].flux||0;
 
-  /* ── PROTON FLUX >100 MeV ── */
-  const proton = await fetchJSON(
-    'https://services.swpc.noaa.gov/json/goes/primary/proton-flux.json'
-  );
-  if (proton?.length){
-    const p = proton.at(-1)['>100 MeV'] || 0;
-    html += `<div class="row"><span class="label">Proton >100 MeV </span>
-      <span class="${color(p,{watch:1,warn:10,danger:100})}">
-      ${p.toExponential(1)} p/cm²/s</span></div>`;
-    count++;
-  }
-
-  /* ── EUV / SOLAR CYCLE INDEX ── */
-  const cycle = await fetchJSON(
-    'https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json'
-  );
-  if (cycle?.length){
-    const u = +cycle.at(-1).euv || 0;
-    html += `<div class="row"><span class="label">Solar EUV Index </span>
-      <span class="${color(u,{watch:5,warn:8,danger:12})}">${u}</span></div>`;
-    count++;
-  }
-
-  dataDiv.innerHTML = html;
-  statusDiv.textContent = `оновлено • ${count} сонячних сигналів`;
+  info.innerHTML=
+    `SolarWind ${state.wind} km/s<br>
+     Kp ${state.kp} | Dst ${state.dst}<br>
+     F10.7 ${state.f107} | SSN ${state.sunspots}<br>
+     CME ${state.cme} | Proton ${state.proton}`;
 }
 
-loadCosmos();
-setInterval(loadCosmos,60000);
+updateData();
+setInterval(updateData,60000);
+
+/* ───────── DRAW COORD SYSTEM ───────── */
+function drawGrid(cx,cy,r){
+  ctx.strokeStyle='#033';
+  ctx.lineWidth=1;
+
+  for(let i=1;i<=5;i++){
+    ctx.beginPath();
+    ctx.arc(cx,cy,(r/5)*i,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  for(let a=0;a<Math.PI*2;a+=Math.PI/6){
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle='#055';
+  ctx.beginPath();
+  ctx.moveTo(0,cy); ctx.lineTo(canvas.width,cy);
+  ctx.moveTo(cx,0); ctx.lineTo(cx,canvas.height);
+  ctx.stroke();
+}
+
+/* ───────── DRAW DATA ───────── */
+function drawVectors(cx,cy,r){
+  const values=[
+    state.wind/900,
+    state.kp/9,
+    Math.abs(state.dst)/200,
+    state.f107/250,
+    state.sunspots/200,
+    state.cme/10,
+    Math.log10(state.proton+1)/5,
+    state.xray*1e8
+  ];
+
+  ctx.beginPath();
+  values.forEach((v,i)=>{
+    const ang=(Math.PI*2/values.length)*i + t*0.1;
+    const rad=r*0.2 + v*r*0.8;
+    const x=cx+Math.cos(ang)*rad;
+    const y=cy+Math.sin(ang)*rad;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.closePath();
+
+  ctx.strokeStyle='rgba(0,255,255,0.8)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  ctx.fillStyle='rgba(0,255,255,0.15)';
+  ctx.fill();
+}
+
+/* ───────── LOOP ───────── */
+function loop(){
+  t+=0.01;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const cx=canvas.width/2;
+  const cy=canvas.height/2;
+  const r=Math.min(cx,cy)*0.75;
+
+  drawGrid(cx,cy,r);
+  drawVectors(cx,cy,r);
+
+  requestAnimationFrame(loop);
+}
+loop();
 </script>
 </body>
 </html>
